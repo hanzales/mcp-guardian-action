@@ -1,0 +1,82 @@
+name: MCP Guardian
+description: Scan MCP configuration files and enforce deterministic security gates.
+author: Hanzales
+branding:
+  icon: shield
+  color: blue
+
+inputs:
+  config:
+    description: Path to the MCP configuration file.
+    required: true
+  version:
+    description: MCP Guardian release version without the leading v.
+    required: false
+    default: 0.6.0-preview.2
+  fail-on:
+    description: Minimum severity that fails the action (critical, high, medium, low, or none).
+    required: false
+    default: high
+  format:
+    description: Output format (text, json, or sarif).
+    required: false
+    default: text
+  output:
+    description: Optional report output path. SARIF reports should use a .sarif path.
+    required: false
+    default: ''
+  working-directory:
+    description: Directory in which to run the scan.
+    required: false
+    default: .
+
+outputs:
+  report-path:
+    description: Report path when the output input is provided.
+    value: ${{ steps.scan.outputs.report-path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Download MCP Guardian
+      id: download
+      shell: bash
+      env:
+        GUARDIAN_VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        case "${RUNNER_OS}:${RUNNER_ARCH}" in
+          Linux:X64) rid="linux-x64" ;;
+          macOS:ARM64) rid="osx-arm64" ;;
+          macOS:X64) rid="osx-x64" ;;
+          Windows:X64) rid="win-x64" ;;
+          *) echo "Unsupported runner: ${RUNNER_OS}/${RUNNER_ARCH}" >&2; exit 2 ;;
+        esac
+        executable="mcp-guardian-${rid}"
+        if [[ "$rid" == win-* ]]; then executable="${executable}.exe"; fi
+        url="https://github.com/hanzales/mcp-guardian/releases/download/v${GUARDIAN_VERSION}/${executable}"
+        install_dir="${RUNNER_TEMP}/mcp-guardian"
+        mkdir -p "$install_dir"
+        curl --fail --location --retry 3 --silent --show-error "$url" --output "$install_dir/$executable"
+        chmod +x "$install_dir/$executable"
+        echo "executable=$install_dir/$executable" >> "$GITHUB_OUTPUT"
+
+    - name: Scan MCP configuration
+      id: scan
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        CONFIG: ${{ inputs.config }}
+        FAIL_ON: ${{ inputs.fail-on }}
+        FORMAT: ${{ inputs.format }}
+        OUTPUT: ${{ inputs.output }}
+        EXECUTABLE: ${{ steps.download.outputs.executable }}
+      run: |
+        set -euo pipefail
+        args=(scan "$CONFIG" --fail-on "$FAIL_ON" --format "$FORMAT")
+        if [[ -n "$OUTPUT" ]]; then
+          mkdir -p "$(dirname "$OUTPUT")"
+          args+=(--output "$OUTPUT")
+        fi
+        "$EXECUTABLE" "${args[@]}"
+        if [[ -n "$OUTPUT" ]]; then echo "report-path=$OUTPUT" >> "$GITHUB_OUTPUT"; fi
