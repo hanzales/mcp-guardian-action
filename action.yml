@@ -12,7 +12,7 @@ inputs:
   version:
     description: MCP Guardian release version without the leading v.
     required: false
-    default: 0.6.0-preview.2
+    default: 0.6.0-preview.3
   fail-on:
     description: Minimum severity that fails the action (critical, high, medium, low, or none).
     required: false
@@ -78,5 +78,23 @@ runs:
           mkdir -p "$(dirname "$OUTPUT")"
           args+=(--output "$OUTPUT")
         fi
+        set +e
         "$EXECUTABLE" "${args[@]}"
+        status=$?
+        set -e
+        if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+          {
+            echo "## MCP Guardian"
+            echo ""
+            echo "- Configuration: `$CONFIG`"
+            echo "- Threshold: `$FAIL_ON`"
+            if [[ "$status" -eq 0 ]]; then
+              echo "- Result: ✅ No findings at or above the configured threshold"
+            else
+              echo "- Result: ❌ Findings reached the configured threshold (exit code `$status`)"
+            fi
+            if [[ -n "$OUTPUT" ]]; then echo "- Report: `$OUTPUT`"; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+        fi
         if [[ -n "$OUTPUT" ]]; then echo "report-path=$OUTPUT" >> "$GITHUB_OUTPUT"; fi
+        exit "$status"
