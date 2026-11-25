@@ -23,6 +23,7 @@ jobs:
           fail-on: high
           format: sarif
           output: artifacts/mcp-guardian.sarif
+          comment: true
       - uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
@@ -47,6 +48,16 @@ Pin a specific release version in production workflows. Review the MCP Guardian 
 The action also writes a compact result to the GitHub Actions job summary when
 `GITHUB_STEP_SUMMARY` is available. SARIF output can still be uploaded to code
 scanning with `github/codeql-action/upload-sarif`.
+
+Set `comment: true` to add or update one compact security summary on pull
+requests. The workflow must grant `pull-requests: write` permission:
+
+```yaml
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+```
 
 ## License
 
