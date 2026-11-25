@@ -19,7 +19,7 @@ jobs:
       - uses: hanzales/mcp-guardian-action@v1
         with:
           config: .mcp.json
-          version: 0.6.0-preview.3
+          version: 0.6.0-preview.4
           fail-on: high
           format: sarif
           output: artifacts/mcp-guardian.sarif
@@ -37,7 +37,7 @@ The action supports Linux x64, macOS x64/arm64, and Windows x64 runners. It does
 | Input | Default | Description |
 | --- | --- | --- |
 | `config` | required | MCP configuration path |
-| `version` | `0.6.0-preview.3` | Release version without `v` |
+| `version` | `0.6.0-preview.4` | Release version without `v` |
 | `fail-on` | `high` | `critical`, `high`, `medium`, `low`, or `none` |
 | `format` | `text` | `text`, `json`, or `sarif` |
 | `output` | empty | Optional report path |

@@ -12,7 +12,7 @@ inputs:
   version:
     description: MCP Guardian release version without the leading v.
     required: false
-    default: 0.6.0-preview.3
+    default: 0.6.0-preview.4
   fail-on:
     description: Minimum severity that fails the action (critical, high, medium, low, or none).
     required: false
